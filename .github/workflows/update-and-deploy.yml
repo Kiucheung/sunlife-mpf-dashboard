@@ -33,8 +33,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 只有 generated_at 改變時不提交
+          if git diff -U0 public/data.json | grep -E '^[+-] ' | grep -vq '"generated_at"'; then CHANGED=1; else CHANGED=0; fi
           git add public/data.json
-          if git diff --cached --quiet; then echo "數據無變更"; else
+          if [ "$CHANGED" = 0 ]; then echo "數據無變更"; git checkout -- public/data.json 2>/dev/null || git restore --staged --worktree public/data.json; else
             git commit -m "數據更新 $(python3 -c "import json;print(json.load(open('public/data.json'))['date'])")"
             git push
           fi
