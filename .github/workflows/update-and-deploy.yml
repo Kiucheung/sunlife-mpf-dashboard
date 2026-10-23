@@ -1,0 +1,63 @@
+name: 更新數據及部署
+
+on:
+  schedule:
+    - cron: "30 2 * * 1-6"   # 02:30 UTC = 10:30 HKT，星期一至六
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ["public/data.json", "README.md"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 抓取最新數據
+        id: fetch
+        continue-on-error: true
+        run: python3 scripts/fetch.py
+      - name: 提交 data.json（如有變更）
+        if: steps.fetch.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data.json
+          if git diff --cached --quiet; then echo "數據無變更"; else
+            git commit -m "數據更新 $(python3 -c "import json;print(json.load(open('public/data.json'))['date'])")"
+            git push
+          fi
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run build
+        env: { GITHUB_PAGES: "true" }
+      - run: touch out/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: out }
+      - name: 數據抓取失敗則標示為失敗（已保留舊數據並部署）
+        if: steps.fetch.outcome != 'success'
+        run: exit 1
+
+  deploy:
+    needs: build
+    if: always() && needs.build.result != 'cancelled'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

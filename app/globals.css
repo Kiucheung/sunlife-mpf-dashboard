@@ -1,0 +1,2 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+body { font-family: system-ui, -apple-system, "PingFang HK", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
