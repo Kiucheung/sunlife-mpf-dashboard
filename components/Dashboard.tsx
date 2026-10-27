@@ -210,7 +210,7 @@ export default function Dashboard({ data }: { data: MpfData }) {
   const selFund = F.find((f) => f.code === sel)!;
   const [view, setView] = useState<"recent" | "quarter" | "year">("recent");
   const [type, setType] = useState("全部");
-  const [cls, setCls] = useState("A/無類別");
+  const [cls, setCls] = useState("B/無類別");
   const [sort, setSort] = useState<{ k: string; asc: boolean }>({ k: "change_pct", asc: false });
   const types = ["全部", ...Array.from(new Set(F.map(typeOf)))];
 
@@ -297,8 +297,8 @@ export default function Dashboard({ data }: { data: MpfData }) {
       </Card>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-5">
-        <Card title="當日升跌 %" sub={`${data.prev_date} → ${data.date}・只顯示 A 類及無類別`} className="lg:col-span-2">
-          <DivBarChart dark={dark} items={ranked.filter((f) => f.class !== "B").map((f) => ({ label: shortName(f), value: f.change_pct! }))} />
+        <Card title="當日升跌 %" sub={`${data.prev_date} → ${data.date}・只顯示 B 類及無類別`} className="lg:col-span-2">
+          <DivBarChart dark={dark} items={ranked.filter((f) => f.class !== "A").map((f) => ({ label: shortName(f), value: f.change_pct! }))} />
         </Card>
         <Card title="基金價格走勢" sub="月底單位價格（HK$）及每季回報（由價格計算）" className="lg:col-span-3"
           right={<select className={selCls} value={sel} onChange={(e) => setSel(e.target.value)}>{F.map((f) => <option key={f.code} value={f.code}>{shortName(f)}{f.is_dis ? " ⭐" : ""}</option>)}</select>}>
