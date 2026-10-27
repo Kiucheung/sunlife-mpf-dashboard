@@ -11,6 +11,13 @@ const UP = "#10b981", DOWN = "#ef4444", FLAT = "#94a3b8";
 const barColor = (v: number) => (v > EPS ? UP : v < -EPS ? DOWN : FLAT);
 const shortName = (f: Fund) => f.name_zh.replace("永明強積金", "").replace("永明", "") + (f.class !== "--" ? ` ${f.class}` : "");
 const typeOf = (f: Fund) => (f.category_zh || "").split("基金")[0];
+const CLASS_OPTIONS = ["A/無類別", "B/無類別", "全部", "A", "B", "--"] as const;
+const matchClass = (f: Fund, cls: string) => {
+  if (cls === "全部") return true;
+  if (cls === "A/無類別") return f.class !== "B";
+  if (cls === "B/無類別") return f.class !== "A";
+  return f.class === cls;
+};
 const shortDate = (d: string) => { const p = d.split("-"); return `${Number(p[1])}/${Number(p[2])}`; };
 
 function Card({ title, sub, right, children, className = "" }: { title?: string; sub?: string; right?: React.ReactNode; children: React.ReactNode; className?: string }) {
@@ -86,7 +93,7 @@ function Daily30({ data }: { data: MpfData }) {
   const [cls, setCls] = useState("A/無類別");
   const [open, setOpen] = useState<string | null>(null);
   const types = ["全部", ...Array.from(new Set(data.funds.map(typeOf)))];
-  const funds = useMemo(() => data.funds.filter((f) => (type === "全部" || typeOf(f) === type) && (cls === "全部" || (cls === "A/無類別" ? f.class !== "B" : f.class === cls))), [data.funds, type, cls]);
+  const funds = useMemo(() => data.funds.filter((f) => (type === "全部" || typeOf(f) === type) && matchClass(f, cls)), [data.funds, type, cls]);
 
   const changeAt = (f: Fund, dateIdxAsc: number): N => {
     const series = f.daily ?? [];
@@ -105,7 +112,7 @@ function Daily30({ data }: { data: MpfData }) {
       <Card title="最近交易日單位價格" sub={`${dates[0]} 至 ${dates[dates.length - 1]}・共 ${dates.length} 個交易日（最多 30 日）。綠色 = 較前一日上升，紅色 = 下跌。左右滑動可睇晒所有日期；手機可點基金名稱展開詳情。`}>
         <div className="mb-4 flex flex-wrap gap-3">
           <label className="text-xs text-slate-500">基金類型<br /><select className={selCls} value={type} onChange={(e) => setType(e.target.value)}>{types.map((t) => <option key={t}>{t}</option>)}</select></label>
-          <label className="text-xs text-slate-500">單位類別<br /><select className={selCls} value={cls} onChange={(e) => setCls(e.target.value)}>{["A/無類別", "全部", "A", "B", "--"].map((c) => <option key={c} value={c}>{c === "--" ? "無類別" : c}</option>)}</select></label>
+          <label className="text-xs text-slate-500">單位類別<br /><select className={selCls} value={cls} onChange={(e) => setCls(e.target.value)}>{CLASS_OPTIONS.map((c) => <option key={c} value={c}>{c === "--" ? "無類別" : c}</option>)}</select></label>
         </div>
 
         {/* Desktop / tablet: sticky-column matrix, newest dates on the left */}
@@ -207,7 +214,7 @@ export default function Dashboard({ data }: { data: MpfData }) {
   const [sort, setSort] = useState<{ k: string; asc: boolean }>({ k: "change_pct", asc: false });
   const types = ["全部", ...Array.from(new Set(F.map(typeOf)))];
 
-  const filtered = useMemo(() => F.filter((f) => (type === "全部" || typeOf(f) === type) && (cls === "全部" || (cls === "A/無類別" ? f.class !== "B" : f.class === cls))), [F, type, cls]);
+  const filtered = useMemo(() => F.filter((f) => (type === "全部" || typeOf(f) === type) && matchClass(f, cls)), [F, type, cls]);
   const sorted = useMemo(() => {
     const get = (f: Fund): number | string => sort.k === "name" ? f.name_zh : sort.k === "nav" ? f.nav : sort.k === "prev" ? (f.prev_nav ?? -1e9) : sort.k === "cat" ? f.category_zh : sort.k.startsWith("q") ? f.quarters[+sort.k.slice(1)] ?? -1e9 : sort.k.startsWith("y") ? f.calendar[sort.k.slice(1)] ?? -1e9 : sort.k.startsWith("c") ? f.computed[sort.k.slice(1) as "3M"] ?? -1e9 : sort.k.startsWith("o") ? f.official[sort.k.slice(1) as "3M"] ?? -1e9 : f.change_pct ?? -1e9;
     return [...filtered].sort((a, b) => { const A = get(a), B = get(b); const c = typeof A === "number" && typeof B === "number" ? A - B : String(A).localeCompare(String(B)); return sort.asc ? c : -c; });
@@ -314,7 +321,7 @@ export default function Dashboard({ data }: { data: MpfData }) {
       <Card title="全部基金（當日）" sub="點擊欄位標題排序；篩選同時套用於上方期間表現表">
         <div className="mb-4 flex flex-wrap gap-3">
           <label className="text-xs text-slate-500">基金類型<br /><select className={selCls} value={type} onChange={(e) => setType(e.target.value)}>{types.map((t) => <option key={t}>{t}</option>)}</select></label>
-          <label className="text-xs text-slate-500">單位類別<br /><select className={selCls} value={cls} onChange={(e) => setCls(e.target.value)}>{["A/無類別", "全部", "A", "B", "--"].map((c) => <option key={c} value={c}>{c === "--" ? "無類別" : c}</option>)}</select></label>
+          <label className="text-xs text-slate-500">單位類別<br /><select className={selCls} value={cls} onChange={(e) => setCls(e.target.value)}>{CLASS_OPTIONS.map((c) => <option key={c} value={c}>{c === "--" ? "無類別" : c}</option>)}</select></label>
         </div>
         <div className="-mx-4 overflow-x-auto sm:mx-0">
           <table className="w-full min-w-[640px] text-sm">
