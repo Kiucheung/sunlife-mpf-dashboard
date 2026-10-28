@@ -2,7 +2,9 @@ name: 更新數據及部署
 
 on:
   schedule:
+    # GitHub schedule 可能延遲；兩個時段提高當日更新機會（永明價格有時較晚上載）
     - cron: "30 2 * * 1-6"   # 02:30 UTC = 10:30 HKT，星期一至六
+    - cron: "0 4 * * 1-6"    # 04:00 UTC = 12:00 HKT 備援
   workflow_dispatch:
   push:
     branches: [main]
