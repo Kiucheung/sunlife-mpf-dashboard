@@ -22,7 +22,7 @@
 
 ## 自動更新
 
-GitHub Actions（`.github/workflows/update-and-deploy.yml`）於每星期一至六 **10:30（香港時間）** 執行：
+GitHub Actions（`.github/workflows/update-and-deploy.yml`）於每星期一至六 **10:30 / 12:00（香港時間）** 執行：
 
 1. `python3 scripts/fetch.py` 抓取最新數據寫入 `public/data.json`（失敗時保留舊數據並以非零狀態退出）
 2. 如數據有變更則自動 commit
