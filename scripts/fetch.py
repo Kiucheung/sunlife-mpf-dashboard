@@ -53,6 +53,15 @@ def month_ends(last, n):
         out.append(dt.date(y + (m == 12), m % 12 + 1, 1) - dt.timedelta(days=1))
     return sorted(out)
 
+
+def calendar_months_ago(day, months=1):
+    """Calendar date `months` months earlier, clamping the day if needed (31 Mar → 28/29 Feb)."""
+    import calendar
+    y, m, d = day.year, day.month - months, day.day
+    while m <= 0:
+        y, m = y - 1, m + 12
+    return dt.date(y, m, min(d, calendar.monthrange(y, m)[1]))
+
 def load_prev():
     try:
         with open(OUT, encoding="utf-8") as f:
@@ -147,6 +156,18 @@ def main():
         return next((s[0] for s in snaps[:-1] if (s[0].year, s[0].month) == (y, m)), None)
     ye = dt.date(last.year - 1, 12, 31)
 
+    # 近1個月：現價相對一個曆月前同日（非估值日則取之前最後估值日）
+    one_m_ago = calendar_months_ago(cur_d, 1)
+    vd_1m, navs_1m = prices_on(one_m_ago)
+    if vd_1m is not None and vd_1m >= cur_d:
+        vd_1m, navs_1m = None, {}
+    print(f"1M baseline: target {one_m_ago} -> valuation {vd_1m}", flush=True)
+
+    def ret_1m(code):
+        A = navs_1m.get(code)
+        B = (cur.get(code) or {}).get("NAV")
+        return round((B / A - 1) * 100, 2) if A and B else None
+
     def ret(code, a, b):
         A = snap_by_target.get(a, (0, 0, {}))[2].get(code); B = snap_by_target.get(b, (0, 0, {}))[2].get(code)
         return round((B / A - 1) * 100, 2) if A and B else None
@@ -169,7 +190,7 @@ def main():
             "risk_class": o.get("RISK_CLASS"),
             "official": {k: pct(o.get("PERFORMANCE_" + k)) for k in ("3M", "YTD", "1YR", "3YR", "5YR", "10YR", "SIP")},
             "calendar": {years[5 - n]: pct(c.get(f"PERFORMANCE_{n}PYR")) for n in range(1, 6)},
-            "computed": {"3M": ret(code, back(3), last), "YTD": ret(code, ye, last), "1YR": ret(code, back(12), last)},
+            "computed": {"1M": ret_1m(code), "3M": ret(code, back(3), last), "YTD": ret(code, ye, last), "1YR": ret(code, back(12), last)},
             "quarters": [ret(code, a, b) for a, b in zip(qe, qe[1:] + [last])],
             "history": [s[2].get(code) for s in snaps],
             "daily": daily_series.get(code, [None] * len(daily_dates)),

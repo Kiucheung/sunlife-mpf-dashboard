@@ -231,12 +231,12 @@ export default function Dashboard({ data }: { data: MpfData }) {
 
   const periodCols: { k: string; label: string; get: (f: Fund) => N }[] =
     view === "recent" ? [
-      { k: "c3M", label: "近3個月*", get: (f) => f.computed["3M"] }, { k: "cYTD", label: "年初至今*", get: (f) => f.computed.YTD }, { k: "c1YR", label: "近1年*", get: (f) => f.computed["1YR"] },
+      { k: "c1M", label: "近1個月*", get: (f) => f.computed["1M"] }, { k: "c3M", label: "近3個月*", get: (f) => f.computed["3M"] }, { k: "cYTD", label: "年初至今*", get: (f) => f.computed.YTD }, { k: "c1YR", label: "近1年*", get: (f) => f.computed["1YR"] },
       { k: "o3M", label: "3個月†", get: (f) => f.official["3M"] }, { k: "oYTD", label: "年初至今†", get: (f) => f.official.YTD }, { k: "o1YR", label: "1年†", get: (f) => f.official["1YR"] }, { k: "o3YR", label: "3年†", get: (f) => f.official["3YR"] }, { k: "o5YR", label: "5年†", get: (f) => f.official["5YR"] }, { k: "o10YR", label: "10年†", get: (f) => f.official["10YR"] },
     ] : view === "quarter" ? data.quarter_labels.map((l, i) => ({ k: "q" + i, label: l, get: (f: Fund) => f.quarters[i] }))
       : data.years.map((y) => ({ k: "y" + y, label: y, get: (f: Fund) => f.calendar[y] }));
   const periodNote = view === "recent"
-    ? `* 由每日單位價格計算，截至 ${data.date}（3個月／1年以 3／12 個月前月底為基準；年初至今以上年 12 月 31 日為基準）。† 永明官方公佈之累積表現，截至 ${data.official_as_of}。`
+    ? `* 由每日單位價格計算，截至 ${data.date}（近1個月為一個曆月前同日相對現價；3個月／1年以 3／12 個月前月底為基準；非估值日則取之前最後估值日；年初至今以上年 12 月 31 日為基準）。† 永明官方公佈之累積表現，截至 ${data.official_as_of}。`
     : view === "quarter" ? `由每日單位價格計算：季度回報 = 季末價 ÷ 上季末價 − 1（季末非估值日則取之前最後估值日）。最後一欄為上季末至 ${data.date}。`
       : `永明官方公佈之曆年表現（截至 ${data.calendar_as_of}）。— 表示基金當年尚未成立。`;
 
@@ -285,8 +285,8 @@ export default function Dashboard({ data }: { data: MpfData }) {
                 <span className={`text-lg font-semibold ${tone(f.change_pct)}`}>{(f.change_pct ?? 0) > EPS ? "▲" : (f.change_pct ?? 0) < -EPS ? "▼" : "■"} {fmt(f.change_pct)}</span>
               </div>
               <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">前一日 {f.prev_nav?.toFixed(4)}・{f.category_zh}</div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {([["近3個月", f.computed["3M"]], ["年初至今", f.computed.YTD], ["近1年", f.computed["1YR"]]] as [string, N][]).map(([l, v]) => (
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {([["近1個月", f.computed["1M"]], ["近3個月", f.computed["3M"]], ["年初至今", f.computed.YTD], ["近1年", f.computed["1YR"]]] as [string, N][]).map(([l, v]) => (
                   <div key={l} className="rounded-lg bg-white px-2 py-1.5 dark:bg-slate-900"><div className="text-[11px] text-slate-400">{l}</div><div className={`font-semibold tabular-nums ${tone(v)}`}>{fmt(v)}</div></div>
                 ))}
               </div>
